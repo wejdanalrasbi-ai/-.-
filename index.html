@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مختبر الفلزات القلوية</title>
+<style>
+:root {
+  --rose:#d95489;
+  --ink:#593a50;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  font-family:Tahoma,Arial,sans-serif;
+  background:linear-gradient(135deg,#fff1f7,#f1eaff);
+  color:var(--ink);
+}
+header {text-align:center;padding:30px 12px}
+h1 {font-size:clamp(24px,4vw,40px)}
+.shell {max-width:1100px;margin:auto;padding:15px}
+.tabs,.choices {
+  display:flex;gap:12px;
+  justify-content:center;flex-wrap:wrap;
+  margin:20px 0;
+}
+button {
+  font:inherit;cursor:pointer;border:0;
+  border-radius:16px;padding:13px 20px;
+  background:white;color:var(--ink);
+  box-shadow:0 5px 16px #a85c8520;
+}
+button:hover {transform:translateY(-2px)}
+button.active,.primary {
+  background:var(--rose);color:white;
+}
+.panel {
+  background:#ffffffed;border-radius:28px;
+  padding:clamp(18px,3vw,32px);
+  box-shadow:0 14px 40px #b8779b22;
+}
+.hidden {display:none!important}
+.lead {text-align:center;line-height:1.9}
+.house,.lab {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;margin:30px 0;
+}
+.room,.station {
+  background:#fff7fb;
+  border:2px solid #f7d5e5;
+  border-radius:24px;
+  padding:20px;text-align:center;
+}
+.room {
+  min-height:215px;
+  display:flex;align-items:center;
+  justify-content:center;
+  flex-direction:column;gap:12px;
+  background:linear-gradient(150deg,#ffe2ef,#eee4ff);
+}
+.door {font-size:65px}
+.symbol {
+  font-size:48px;font-weight:bold;
+  color:#b83d77;
+}
+.info {
+  background:#fff3f8;
+  border:2px dashed #edb4cb;
+  padding:20px;border-radius:18px;
+  text-align:center;line-height:2;
+}
+.challenge {text-align:center;margin-top:25px}
+.feedback {
+  min-height:35px;font-weight:bold;
+  text-align:center;line-height:1.8;
+}
+.good {color:#24805c}
+.bad {color:#b44b65}
+.beaker {
+  position:relative;
+  height:215px;width:155px;
+  margin:22px auto;
+  border:7px solid #a6a0c9;
+  border-top:0;
+  border-radius:0 0 27px 27px;
+  overflow:hidden;
+  background:linear-gradient(90deg,#fff9,transparent,#fff6);
+  box-shadow:inset 10px 0 14px #ffffff80;
+}
+.water {
+  position:absolute;bottom:0;
+  height:53%;width:100%;
+  background:linear-gradient(#a7e9f7,#83cfea,#c5eff9);
+  border-top:3px solid #eaffff;
+  transform-origin:bottom;
+}
+.metal {
+  position:absolute;z-index:5;
+  top:45%;left:calc(50% - 15px);
+  width:30px;height:14px;
+  border-radius:8px;
+  background:linear-gradient(110deg,#858a9b,#ececf0,#9298a8);
+  box-shadow:0 3px 6px #53677c55;
+}
+.bubble {
+  position:absolute;z-index:4;
+  bottom:42%;left:var(--x);
+  width:var(--size);height:var(--size);
+  border:2px solid #fff;
+  border-radius:50%;opacity:0;
+}
+.splash {
+  position:absolute;z-index:4;
+  top:39%;left:15%;
+  width:70%;height:25%;
+  border-top:3px dotted white;
+  border-radius:50%;opacity:0;
+}
+.flame {
+  display:none;
+  position:absolute;z-index:8;
+  top:17%;left:calc(50% - 14px);
+  width:28px;height:55px;
+  background:radial-gradient(
+    ellipse at 50% 75%,
+    #fff9ee 5%,#e5b3ff 35%,
+    #9862dc 68%,transparent 76%
+  );
+  border-radius:75% 0 70% 50%;
+  filter:drop-shadow(0 0 10px #b28aff);
+}
+.station[data-level="1"] {
+  --speed:1.8s;--wave:1.8s;--drift:2.4s;
+}
+.station[data-level="2"] {
+  --speed:.8s;--wave:.65s;--drift:.55s;
+}
+.station[data-level="3"] {
+  --speed:.35s;--wave:.2s;--drift:.16s;
+}
+.station.running .water {
+  animation:slosh var(--wave) infinite alternate ease-in-out;
+}
+.station.running .metal {
+  animation:drift var(--drift) infinite alternate ease-in-out;
+}
+.station.running .bubble {
+  animation:rise var(--speed) infinite ease-out;
+  animation-delay:var(--delay);
+}
+.station.running .splash {
+  opacity:1;
+  animation:splash var(--wave) infinite alternate;
+}
+.station.running[data-level="3"] .flame {
+  display:block;
+  animation:flicker .19s infinite alternate;
+}
+.station p {
+  color:#a7477b;
+  font-weight:bold;min-height:28px;
+}
+.safety {
+  background:#fff1d8;
+  padding:15px;border-radius:16px;
+  line-height:1.8;margin-top:20px;
+}
+.confetti {
+  position:fixed;z-index:99;
+  pointer-events:none;
+  font-size:23px;
+  animation:fall 1.8s linear forwards;
+}
+@keyframes rise {
+  0% {transform:translateY(0) scale(.5);opacity:0}
+  20% {opacity:1}
+  100% {transform:translateY(-100px) scale(1.4);opacity:0}
+}
+@keyframes slosh {
+  from {transform:skewY(-2deg) scaleY(.99)}
+  to {transform:skewY(3deg) scaleY(1.06)}
+}
+@keyframes drift {
+  from {transform:translateX(-22px) rotate(-12deg)}
+  to {transform:translateX(25px) rotate(12deg)}
+}
+@keyframes splash {
+  from {transform:scale(.7);opacity:.2}
+  to {transform:scale(1.2);opacity:1}
+}
+@keyframes flicker {
+  from {transform:scale(.7) rotate(-20deg);opacity:.7}
+  to {transform:scale(1.25) rotate(8deg);opacity:1}
+}
+@keyframes fall {
+  to {transform:translateY(95vh) rotate(400deg);opacity:0}
+}
+@media(max-width:680px) {
+  .house,.lab {grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🎀 مختبر الفلزات القلوية 🧪</h1>
+<p>مغامرة اكتشاف خواص المجموعة الأولى</p>
+</header>
+
+<main class="shell">
+<nav class="tabs">
+<button class="active" data-tab="home"
+ onclick="showTab('home')">🏠 منزل العناصر</button>
+<button data-tab="lab"
+ onclick="showTab('lab')">💧 مختبر التفاعلات</button>
+</nav>
+
+<section class="panel" id="home">
+<h2>🏠 من يسكن في منزل المجموعة الأولى؟</h2>
+<p class="lead">
+وراء كل باب عنصر سري!
+افتحي الغرف الثلاث واكتشفي ما يجمع سكان المنزل.
+</p>
+<div class="house" id="house"></div>
+<div class="info" id="info">
+✨ اضغطي على أحد الأبواب لبدء الاكتشاف.
+</div>
+<div class="challenge hidden" id="houseChallenge">
+<h3>🔎 ما الذي يجمع العناصر الثلاثة؟</h3>
+<div class="choices">
+<button onclick="answerHouse(false)">لها العدد الذري نفسه</button>
+<button onclick="answerHouse(true)">لها إلكترون واحد في المستوى الخارجي</button>
+<button onclick="answerHouse(false)">لها درجة الانصهار نفسها</button>
+</div>
+<div class="feedback" id="houseFeedback"></div>
+</div>
+<div style="text-align:center;margin-top:18px">
+<button onclick="resetHouse()">↻ إعادة اكتشاف المنزل</button>
+</div>
+</section>
+
+<section class="panel hidden" id="lab">
+<h2>💧 مختبر التفاعلات الافتراضي</h2>
+<p class="lead">
+شغّلي المحاكاة لكل عنصر، وراقبي ما يحدث للماء والفلز.
+</p>
+<div class="lab" id="labStations"></div>
+<div class="challenge">
+<h3>🏆 رتبي العناصر من الأقل إلى الأكثر نشاطًا</h3>
+<div class="choices">
+<button onclick="answerLab(false)">بوتاسيوم ← صوديوم ← ليثيوم</button>
+<button onclick="answerLab(true)">ليثيوم ← صوديوم ← بوتاسيوم</button>
+<button onclick="answerLab(false)">صوديوم ← ليثيوم ← بوتاسيوم</button>
+</div>
+<div class="feedback" id="labFeedback"></div>
+<button onclick="resetLab()">↻ إعادة المحاكاة</button>
+</div>
+<div class="safety">
+⚠️ تنبيه السلامة: هذه محاكاة تعليمية مبسطة وليست تصويرًا دقيقًا.
+تفاعل الفلزات القلوية مع الماء خطر، ولا يُجرى بواسطة الطالبات.
+</div>
+</section>
+</main>
+
+<script>
+const elements = [
+ {name:"الليثيوم",symbol:"Li",atomic:3,mass:7,config:"2، 1",level:1},
+ {name:"الصوديوم",symbol:"Na",atomic:11,mass:23,config:"2، 8، 1",level:2},
+ {name:"البوتاسيوم",symbol:"K",atomic:19,mass:39,config:"2، 8، 8، 1",level:3}
+];
+
+let opened = new Set();
+
+function showTab(id) {
+ document.querySelectorAll(".panel").forEach(s=>{
+  s.classList.toggle("hidden",s.id!==id);
+ });
+ document.querySelectorAll("[data-tab]").forEach(b=>{
+  b.classList.toggle("active",b.dataset.tab===id);
+ });
+}
+
+function renderHouse() {
+ document.getElementById("house").innerHTML =
+ elements.map((e,i)=>`
+ <div class="room">
+ ${opened.has(i)?`
+ <span class="symbol">${e.symbol}</span>
+ <strong>${e.name}</strong>
+ <small>العدد الذري ${e.atomic}</small>
+ `:`
+ <span class="door">🚪</span>
+ <strong>غرفة سرية</strong>
+ `}
+ <button onclick="openRoom(${i})">
+ ${opened.has(i)?"عرض البطاقة":"افتحي الباب"}
+ </button>
+ </div>`).join("");
+ document.getElementById("houseChallenge")
+ .classList.toggle("hidden",opened.size!==3);
+}
+
+function openRoom(i) {
+ opened.add(i);
+ const e=elements[i];
+ renderHouse();
+ document.getElementById("info").innerHTML=`
+ 🌟 <strong>${e.name} (${e.symbol})</strong>
+ <br>العدد الذري: ${e.atomic}
+ | العدد الكتلي: ${e.mass}
+ <br>التركيب الإلكتروني: ${e.config}
+ <br>إلكترونات المستوى الخارجي: 1
+ `;
+}
+
+function answerHouse(correct) {
+ const el=document.getElementById("houseFeedback");
+ el.className="feedback "+(correct?"good":"bad");
+ el.textContent=correct?
+ "🎉 ممتاز! جميعها تحتوي على إلكترون واحد في المستوى الخارجي.":
+ "حاولي مجددًا! قارني التراكيب الإلكترونية.";
+ if(correct) celebrate();
+}
+
+function resetHouse() {
+ opened.clear();
+ document.getElementById("info").textContent=
+ "✨ اضغطي على أحد الأبواب لبدء الاكتشاف.";
+ document.getElementById("houseFeedback").textContent="";
+ renderHouse();
+}
+
+function renderLab() {
+ document.getElementById("labStations").innerHTML=
+ elements.map((e,i)=>`
+ <article class="station" id="station${i}"
+ data-level="${e.level}">
+ <h3>${e.name} (${e.symbol})</h3>
+ <div class="beaker">
+  <div class="water"></div>
+  <div class="metal"></div>
+  ${Array.from({length:8},(_,j)=>`
+   <span class="bubble"
+    style="--x:${12+j*10}%;
+    --size:${7+j%3*3}px;
+    --delay:${j*.12}s"></span>
+  `).join("")}
+  <span class="splash"></span>
+  <span class="flame"></span>
+ </div>
+ <p id="desc${i}">اضغطي لبدء التفاعل</p>
+ <button class="primary" onclick="startReaction(${i})">
+ ابدئي المحاكاة
+ </button>
+ </article>
+ `).join("");
+}
+
+let audioCtx=null;
+function playSound(i) {
+ try {
+  const Audio=window.AudioContext||window.webkitAudioContext;
+  if(!Audio)return;
+  audioCtx=audioCtx||new Audio();
+  if(audioCtx.state==="suspended")audioCtx.resume();
+  const count=[3,6,10][i];
+  for(let n=0;n<count;n++){
+   const t=audioCtx.currentTime+n*.085;
+   const osc=audioCtx.createOscillator();
+   const gain=audioCtx.createGain();
+   osc.type="sine";
+   osc.frequency.setValueAtTime(260,t);
+   osc.frequency.exponentialRampToValueAtTime(110,t+.07);
+   gain.gain.setValueAtTime(.0001,t);
+   gain.gain.exponentialRampToValueAtTime(.018,t+.008);
+   gain.gain.exponentialRampToValueAtTime(.0001,t+.075);
+   osc.connect(gain);
+   gain.connect(audioCtx.destination);
+   osc.start(t);
+   osc.stop(t+.08);
+  }
+ }catch(e){}
+}
+
+function startReaction(i) {
+ const s=document.getElementById("station"+i);
+ s.classList.remove("running");
+ void s.offsetWidth;
+ s.classList.add("running");
+ document.getElementById("desc"+i).textContent=
+ ["تفاعل هادئ","تفاعل أسرع","تفاعل شديد"][i];
+ playSound(i);
+}
+
+function answerLab(correct) {
+ const el=document.getElementById("labFeedback");
+ el.className="feedback "+(correct?"good":"bad");
+ el.textContent=correct?
+ "🎉 رائع! تزداد شدة التفاعل مع الماء كلما اتجهنا إلى أسفل المجموعة الأولى.":
+ "حاولي مجددًا، وراقبي التفاعلات مرة أخرى.";
+ if(correct)celebrate();
+}
+
+function resetLab() {
+ renderLab();
+ document.getElementById("labFeedback").textContent="";
+}
+
+function celebrate() {
+ for(let i=0;i<22;i++){
+  const s=document.createElement("span");
+  s.className="confetti";
+  s.textContent=["✨","🎀","⭐","💗"][i%4];
+  s.style.left=Math.random()*95+"vw";
+  s.style.top="-35px";
+  s.style.animationDelay=Math.random()*.7+"s";
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(),2600);
+ }
+}
+
+renderHouse();
+renderLab();
+</script>
+</body>
+</html>
